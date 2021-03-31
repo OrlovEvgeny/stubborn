@@ -393,8 +393,13 @@ func (s *Client) readLoop() {
 			return
 		case <-s.ctx.Done():
 			s.l.Debugln("context signal received: ", s.ctx.Err())
+			if s.config.IsReconnectable && !s.isClosed {
+				s.critErrChan <- criticalErr(s.ctx.Err())
+				<-s.reconnectedCh
+				break
+			}
 			s.Close()
-			return
+			break
 		default:
 			msgType, msg, err := s.read()
 			if err != nil {
