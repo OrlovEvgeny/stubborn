@@ -391,7 +391,10 @@ func (s *Client) readLoop() {
 		case <-s.stopRead:
 			close(s.stopReadWait)
 			return
-
+		case <-s.ctx.Done():
+			s.l.Debugln("context signal received: ", s.ctx.Err())
+			s.Close()
+			return
 		default:
 			msgType, msg, err := s.read()
 			if err != nil {
@@ -535,6 +538,9 @@ func minorErr(err error) error {
 }
 
 func (s *Client) Close() {
+	if s.isClosed {
+		return
+	}
 	s.isClosed = true
 
 	close(s.stopRead)
